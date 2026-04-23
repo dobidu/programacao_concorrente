@@ -1,7 +1,7 @@
 # LPII — Programação Concorrente em C/C++
 
 **Universidade Federal da Paraíba — Centro de Informática**  
-**Linguagem de Programação II — Turma 02 — 2025.2**  
+**Linguagem de Programação II**  
 **Prof. Carlos Eduardo Coelho Freire Batista**
 
 ---
@@ -135,4 +135,4 @@ make clean
 
 ## 📄 Licença
 
-Material didático — UFPB/CI/DI — Prof. Carlos Eduardo Batista — 2025.
+Material didático — UFPB/CI/DI — Prof. Carlos Eduardo Batista — 2026.
