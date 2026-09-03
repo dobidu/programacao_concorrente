@@ -1,0 +1,8 @@
+$ gcc -fsanitize=thread -Wall -Wextra -pthread deadlock.c -o deadlock
+$ timeout 20 stdbuf -oL setarch $(uname -m) -R ./deadlock
+=== VERSÃO COM DEADLOCK (ordens opostas) ===
+Se travar, pressione Ctrl+C
+$ echo $?
+124   # timeout - o programa não termina. É o deadlock: as duas threads
+      # ficam bloqueadas, cada uma segurando o mutex que a outra espera.
+      # O TSan não acusa nada aqui: não há data race, há espera circular.

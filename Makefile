@@ -1,35 +1,36 @@
-# Makefile global — LPII Programação Concorrente
-# Compila TODOS os exemplos de todos os módulos
+# Makefile - compila TODOS os exemplos com o portão de qualidade do projeto.
+#
+# -Werror não é zelo: o material afirma "zero warnings", e gcc devolve 0 com
+# warnings na tela. Dizer "compila sem avisos" a partir do código de saída é
+# falso, e foi assim que um `usleep` sem _XOPEN_SOURCE quase entrou.
+#
+#     make            compila tudo
+#     make roda       compila e executa cada um (alguns levam segundos)
+#     make limpa
+#
+# O Revela tem Makefile próprio, em revela/, com o portão de 200 execuções.
 
-SUBDIRS := $(shell find modulo1-fundamentos modulo2-sincronizacao modulo3-comunicacao minichat -name Makefile -exec dirname {} \;)
+CFLAGS   = -O2 -Wall -Wextra -Werror -pthread
+CXXFLAGS = -std=c++17 -O2 -Wall -Wextra -Werror -pthread
 
-.PHONY: all clean modulo1 modulo2 modulo3 minichat
+FONTES_C   := $(shell find c -name '*.c' 2>/dev/null) $(shell find medidas -name '*.c' 2>/dev/null)
+FONTES_CPP := $(shell find cpp -name '*.cpp' 2>/dev/null)
+ALVOS      := $(FONTES_C:.c=) $(FONTES_CPP:.cpp=)
 
-all:
-	@echo "=== Compilando todos os $(words $(SUBDIRS)) exemplos ==="
-	@OK=0; FAIL=0; \
-	for dir in $(SUBDIRS); do \
-		if $(MAKE) -C $$dir -s 2>/dev/null; then \
-			OK=$$((OK+1)); \
-		else \
-			echo "FALHA: $$dir"; \
-			FAIL=$$((FAIL+1)); \
-		fi; \
-	done; \
-	echo "=== OK: $$OK | Falhas: $$FAIL ==="
+.PHONY: all roda limpa
+all: $(ALVOS)
 
-clean:
-	@for dir in $(SUBDIRS); do $(MAKE) -C $$dir clean -s 2>/dev/null; done
-	@echo "Todos os binários removidos."
+%: %.c
+	$(CC) $(CFLAGS) $< -o $@
 
-modulo1:
-	@for dir in $(shell find modulo1-fundamentos -name Makefile -exec dirname {} \;); do $(MAKE) -C $$dir; done
+%: %.cpp
+	$(CXX) $(CXXFLAGS) $< -o $@
 
-modulo2:
-	@for dir in $(shell find modulo2-sincronizacao -name Makefile -exec dirname {} \;); do $(MAKE) -C $$dir; done
+roda: all
+	@for x in $(ALVOS); do \
+	  printf '\n=== %s ===\n' "$$x"; \
+	  timeout 120 ./$$x || echo "  (saida $$? - alguns exemplos falham de proposito)"; \
+	done
 
-modulo3:
-	@for dir in $(shell find modulo3-comunicacao -name Makefile -exec dirname {} \;); do $(MAKE) -C $$dir; done
-
-minichat:
-	@for dir in $(shell find minichat -name Makefile -exec dirname {} \;); do $(MAKE) -C $$dir; done
+limpa:
+	@rm -f $(ALVOS)

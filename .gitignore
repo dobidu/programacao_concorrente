@@ -1,0 +1,21 @@
+# Binários e objetos. O que se versiona aqui é fonte: `make` reconstrói o resto,
+# e um binário commitado envelhece em silêncio em relação ao .c ao lado dele.
+*.o
+*.a
+*.ppm
+!entrada.ppm
+
+# Alvos sem extensão, produzidos pelas regras de padrão do Makefile.
+c/**/[a-z_]*
+!c/**/*.c
+!c/**/*.h
+cpp/**/[a-z_]*
+!cpp/**/*.cpp
+medidas/[a-z_]*
+!medidas/*.c
+revela/base/[a-z_]*
+!revela/base/*.c
+!revela/base/*.h
+revela/lab*/esqueleto
+revela/lab*/solucao
+revela/saida*

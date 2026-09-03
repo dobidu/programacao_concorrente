@@ -1,0 +1,46 @@
+$ gcc -fsanitize=thread -Wall -Wextra -pthread race_condition.c -o race_condition
+$ setarch $(uname -m) -R ./race_condition
+==================
+WARNING: ThreadSanitizer: data race (pid=20522)
+  Read of size 4 at 0x555555558014 by thread T2:
+    #0 incrementar <null> (rc+0x129d) (BuildId: 95a40561ba0c74b023e03bc620d787ad32b18e95)
+
+  Previous write of size 4 at 0x555555558014 by thread T1:
+    #0 incrementar <null> (rc+0x12b5) (BuildId: 95a40561ba0c74b023e03bc620d787ad32b18e95)
+
+  Location is global 'contador' of size 4 at 0x555555558014 (rc+0x4014)
+
+  Thread T2 (tid=20525, running) created by main thread at:
+    #0 pthread_create ../../../../src/libsanitizer/tsan/tsan_interceptors_posix.cpp:1022 (libtsan.so.2+0x5ac1a) (BuildId: 2a13a7710e361d06f7babbea53065ca2be93f738)
+    #1 main <null> (rc+0x133d) (BuildId: 95a40561ba0c74b023e03bc620d787ad32b18e95)
+
+  Thread T1 (tid=20524, running) created by main thread at:
+    #0 pthread_create ../../../../src/libsanitizer/tsan/tsan_interceptors_posix.cpp:1022 (libtsan.so.2+0x5ac1a) (BuildId: 2a13a7710e361d06f7babbea53065ca2be93f738)
+    #1 main <null> (rc+0x1320) (BuildId: 95a40561ba0c74b023e03bc620d787ad32b18e95)
+
+SUMMARY: ThreadSanitizer: data race (/tmp/tmp.hMEG8mtuzC/rc+0x129d) (BuildId: 95a40561ba0c74b023e03bc620d787ad32b18e95) in incrementar
+==================
+==================
+WARNING: ThreadSanitizer: data race (pid=20522)
+  Write of size 4 at 0x555555558014 by thread T2:
+    #0 incrementar <null> (rc+0x12b5) (BuildId: 95a40561ba0c74b023e03bc620d787ad32b18e95)
+
+  Previous write of size 4 at 0x555555558014 by thread T1:
+    #0 incrementar <null> (rc+0x12b5) (BuildId: 95a40561ba0c74b023e03bc620d787ad32b18e95)
+
+  Location is global 'contador' of size 4 at 0x555555558014 (rc+0x4014)
+
+  Thread T2 (tid=20525, running) created by main thread at:
+    #0 pthread_create ../../../../src/libsanitizer/tsan/tsan_interceptors_posix.cpp:1022 (libtsan.so.2+0x5ac1a) (BuildId: 2a13a7710e361d06f7babbea53065ca2be93f738)
+    #1 main <null> (rc+0x133d) (BuildId: 95a40561ba0c74b023e03bc620d787ad32b18e95)
+
+  Thread T1 (tid=20524, running) created by main thread at:
+    #0 pthread_create ../../../../src/libsanitizer/tsan/tsan_interceptors_posix.cpp:1022 (libtsan.so.2+0x5ac1a) (BuildId: 2a13a7710e361d06f7babbea53065ca2be93f738)
+    #1 main <null> (rc+0x1320) (BuildId: 95a40561ba0c74b023e03bc620d787ad32b18e95)
+
+SUMMARY: ThreadSanitizer: data race (/tmp/tmp.hMEG8mtuzC/rc+0x12b5) (BuildId: 95a40561ba0c74b023e03bc620d787ad32b18e95) in incrementar
+==================
+ThreadSanitizer: reported 2 warnings
+Contador: 2000000 (esperado: 2000000)
+$ echo $?
+66
