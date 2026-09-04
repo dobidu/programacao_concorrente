@@ -1,5 +1,8 @@
 # Binários e objetos. O que se versiona aqui é fonte: `make` reconstrói o resto,
 # e um binário commitado envelhece em silêncio em relação ao .c ao lado dele.
+#
+# Gerado por build/espelhar_repo.py no material-fonte. Editar aqui é trabalho
+# perdido no próximo espelhamento.
 *.o
 *.a
 *.ppm

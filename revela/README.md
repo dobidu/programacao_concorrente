@@ -36,6 +36,75 @@ projeção. O papel dele inverte: em vez de oráculo, vira **confirmação** - o
 estudante primeiro reproduz e explica a falha com o que tem na mão, e só depois vê a
 ferramenta apontar as duas linhas que ele já havia identificado.
 
+## Arquitetura
+
+Uma biblioteca comum, um oráculo e doze candidatos. A propriedade que sustenta
+tudo está na figura: **o oráculo e o candidato leem a MESMA entrada e usam o
+MESMO código de leitura, filtro e escrita.** A única coisa que difere entre eles
+é a estratégia de concorrência - e é por isso que qualquer diferença na saída é,
+necessariamente, defeito de concorrência.
+
+```mermaid
+flowchart LR
+    G["base/gerar_imagem"] --> E["entrada.ppm<br/>1200x800, determinística"]
+
+    subgraph LIB["base/librevela.a - comum aos dois lados"]
+        direction TB
+        P["ppm.c<br/>ler e escrever"]
+        F["filtro.c<br/>cinza, desfoque, histograma"]
+        R["revela.c<br/>linha de comando e resumo"]
+    end
+
+    E --> O["base/revela_seq<br/>O ORÁCULO<br/>sequencial, sem thread"]
+    E --> C["labNN/esqueleto<br/>labNN/solucao<br/>a versão concorrente"]
+    LIB -.-> O
+    LIB -.-> C
+
+    O --> SO["saída de referência<br/>hist= baldes= pixels="]
+    C --> SC["saída do candidato<br/>hist= baldes= pixels="]
+
+    SO --> V{"verifica.sh<br/>200 execuções"}
+    SC --> V
+    V -->|"idênticas"| OK["PASSOU"]
+    V -->|"alguma difere"| NOK["FALHOU<br/>divergencia-N.ppm"]
+```
+
+Dois arquivos da `base/` não entram no caminho normal e existem para o ensino.
+O `janela.h` define a macro `JANELA()`, que alarga a seção crítica e é ligada por
+`make amplifica`: ela transforma uma corrida rara em corrida certa, sem alterar
+uma linha da lógica. O `crono.h` mede tempo monotônico, que é o que permite
+comparar um laboratório com o LAB-01 e afirmar ganho em vez de sensação.
+
+## O que o estudante faz em trinta minutos
+
+```mermaid
+flowchart TD
+    A["recebe labNN/esqueleto"] --> B["make labNN"]
+    B --> C["./verifica.sh labNN/esqueleto entrada.ppm ..."]
+    C --> D{"o portão diz"}
+
+    D -->|"divergiu do oráculo"| E1["abre divergencia-N.ppm<br/>a faixa rasgada mostra ONDE"]
+    E1 --> F1["compara baldes= com pixels=<br/>se diferem, houve atualização perdida"]
+    F1 --> G1["make amplifica<br/>a corrida rara vira certa"]
+
+    D -->|"travou"| E2["gdb -p no processo<br/>thread apply all bt"]
+    E2 --> F2["lê nas pilhas quem detém<br/>a trava e quem a espera"]
+
+    D -->|"erro de execução"| E3["lê a mensagem<br/>retorno não conferido, quase sempre"]
+
+    G1 --> H["corrige"]
+    F2 --> H
+    E3 --> H
+    H --> C
+
+    D -->|"PASSOU"| Z["compara o tempo com o LAB-01<br/>e explica de onde veio o ganho"]
+```
+
+O ciclo é curto de propósito. O portão responde em segundos, diz qual das três
+falhas ocorreu, e cada uma tem uma técnica associada - nenhuma delas dependendo
+de ferramenta que o laboratório não tenha. Passar no portão não encerra o
+laboratório: o resultado correto é o piso, e o que se discute depois é o tempo.
+
 ## Uso
 
 ```bash
@@ -56,15 +125,19 @@ travamento (imprime a linha de `gdb` para anexar ao processo) e erro de execuç�
 ## Estrutura
 
 ```
-base/     ppm.c leitor/escritor PPM · filtro.c os filtros · revela.c linha de comando
-          crono.h medição monotônica · janela.h alargamento da seção crítica
-          revela_seq.c O ORÁCULO · gerar_imagem.c entrada determinística
-exNN/     esqueleto.c (o que o estudante recebe) e solucao.c (referência)
+base/        ppm.c ler e escrever PPM · filtro.c os filtros · revela.c linha de comando
+             crono.h medição monotônica · janela.h alargamento da seção crítica
+             revela_seq.c O ORÁCULO · gerar_imagem.c entrada determinística
+lab01..lab12/  esqueleto (o que o estudante recebe) e solucao (referência)
 verifica.sh  o portão, sem ferramenta especial
 ```
 
-`esqueleto.c` é o ponto de partida da aula e **falha o portão de propósito**.
-`solucao.c` é a referência do docente. Os dois compilam sem warning.
+O esqueleto é o ponto de partida da aula e **falha o portão de propósito**. A
+solução é a referência do docente. Os dois compilam sem um aviso sequer.
+
+O laboratório é C ou C++17 conforme a extensão do fonte: o LAB-08 é `.cpp`,
+porque é o do Capítulo 9, e todos os outros são `.c`. O Makefile tem uma regra
+para cada extensão, o que evita um Makefile por laboratório.
 
 ## Estado
 
