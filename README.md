@@ -135,6 +135,68 @@ interativo e não-determinístico não permite.
 
 São 12 laboratórios de 30 minutos, cada um com esqueleto e solução.
 
+### Como as peças se encaixam
+
+O oráculo e a sua versão leem a mesma entrada e usam a mesma
+biblioteca de leitura, filtro e escrita. A única diferença entre os
+dois é a estratégia de concorrência, e é daí que vem a força do
+portão: qualquer diferença na saída é, necessariamente, defeito de
+concorrência.
+
+```mermaid
+flowchart LR
+    G["base/gerar_imagem"] --> E["entrada.ppm<br/>1200x800, determinística"]
+
+    subgraph LIB["base/librevela.a - comum aos dois lados"]
+        direction TB
+        P["ppm.c<br/>ler e escrever"]
+        F["filtro.c<br/>cinza, desfoque, histograma"]
+        R["revela.c<br/>linha de comando e resumo"]
+    end
+
+    E --> O["base/revela_seq<br/>O ORÁCULO<br/>sequencial, sem thread"]
+    E --> C["labNN/esqueleto<br/>labNN/solucao<br/>a versão concorrente"]
+    LIB -.-> O
+    LIB -.-> C
+
+    O --> SO["saída de referência<br/>hist= baldes= pixels="]
+    C --> SC["saída do candidato<br/>hist= baldes= pixels="]
+
+    SO --> V{"verifica.sh<br/>200 execuções"}
+    SC --> V
+    V -->|"idênticas"| OK["PASSOU"]
+    V -->|"alguma difere"| NOK["FALHOU<br/>divergencia-N.ppm"]
+```
+
+### O ciclo de trinta minutos
+
+O portão responde em segundos e distingue três formas de falha.
+Cada uma tem uma técnica associada, e nenhuma delas depende de
+ferramenta que o laboratório não tenha.
+
+```mermaid
+flowchart TD
+    A["recebe labNN/esqueleto"] --> B["make labNN"]
+    B --> C["./verifica.sh labNN/esqueleto entrada.ppm ..."]
+    C --> D{"o portão diz"}
+
+    D -->|"divergiu do oráculo"| E1["abre divergencia-N.ppm<br/>a faixa rasgada mostra ONDE"]
+    E1 --> F1["compara baldes= com pixels=<br/>se diferem, houve atualização perdida"]
+    F1 --> G1["make amplifica<br/>a corrida rara vira certa"]
+
+    D -->|"travou"| E2["gdb -p no processo<br/>thread apply all bt"]
+    E2 --> F2["lê nas pilhas quem detém<br/>a trava e quem a espera"]
+
+    D -->|"erro de execução"| E3["lê a mensagem<br/>retorno não conferido, quase sempre"]
+
+    G1 --> H["corrige"]
+    F2 --> H
+    E3 --> H
+    H --> C
+
+    D -->|"PASSOU"| Z["compara o tempo com o LAB-01<br/>e explica de onde veio o ganho"]
+```
+
 ## Números
 
 - 76 fontes em C e 4 em C++
